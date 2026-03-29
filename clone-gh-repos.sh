@@ -2,29 +2,9 @@
 
 set -euo pipefail
 
-if [[ $# -lt 1 ]]; then
-	echo "Usage: $(basename "$0") <owner> [base_dir] [limit]" >&2
-	echo "  owner:    GitHub username or organisation (required)" >&2
-	echo "  base_dir: root directory for cloned repos (default: \$HOME/Code)" >&2
-	echo "  limit:    max repos to list (default: 1000)" >&2
-	exit 1
-fi
-
-OWNER="$1"
-BASE_DIR=${2:-"$HOME/Code"}
-LIMIT=${3:-1000}
-
-if ((BASH_VERSINFO[0] < 4)); then
-	echo "ERROR: Bash 4+ is required (found ${BASH_VERSION}). On macOS: brew install bash" >&2
-	exit 1
-fi
-
-for cmd in gh git; do
-	if ! command -v "$cmd" &>/dev/null; then
-		echo "ERROR: Required command '$cmd' not found. Please install it first." >&2
-		exit 1
-	fi
-done
+# ---------------------------------------------------------------------------
+# Functions
+# ---------------------------------------------------------------------------
 
 normalize_language() {
 	local lang="$1"
@@ -51,23 +31,6 @@ normalize_visibility() {
 	fi
 }
 
-mkdir -p "$BASE_DIR"
-
-repo_list="$(mktemp)" || { echo "Failed to create temp file" >&2; exit 1; }
-trap 'rm -f "$repo_list"' EXIT
-
-if ! gh repo list "$OWNER" --limit "$LIMIT" --json name,primaryLanguage,visibility \
-	--jq '.[] | [.name, (.primaryLanguage.name // "Other"), .visibility] | @tsv' \
-	>"$repo_list"; then
-	echo "ERROR: gh repo list failed for owner '$OWNER'" >&2
-	exit 1
-fi
-
-cloned=0
-existing=0
-moved=0
-failed=0
-
 cleanup_empty_legacy_language_folders() {
 	shopt -s dotglob nullglob
 	local seen_languages=()
@@ -90,6 +53,57 @@ cleanup_empty_legacy_language_folders() {
 	done <<<"$unique_langs"
 	shopt -u dotglob nullglob
 }
+
+# Allow sourcing for tests: __CLONE_GH_REPOS_SOURCED=1 source clone-gh-repos.sh
+if [[ "${__CLONE_GH_REPOS_SOURCED:-}" == "1" ]]; then
+	# shellcheck disable=SC2317
+	return 0 2>/dev/null || exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+if [[ $# -lt 1 ]]; then
+	echo "Usage: $(basename "$0") <owner> [base_dir] [limit]" >&2
+	echo "  owner:    GitHub username or organisation (required)" >&2
+	echo "  base_dir: root directory for cloned repos (default: \$HOME/Code)" >&2
+	echo "  limit:    max repos to list (default: 1000)" >&2
+	exit 1
+fi
+
+OWNER="$1"
+BASE_DIR=${2:-"$HOME/Code"}
+LIMIT=${3:-1000}
+
+if ((BASH_VERSINFO[0] < 4)); then
+	echo "ERROR: Bash 4+ is required (found ${BASH_VERSION}). On macOS: brew install bash" >&2
+	exit 1
+fi
+
+for cmd in gh git; do
+	if ! command -v "$cmd" &>/dev/null; then
+		echo "ERROR: Required command '$cmd' not found. Please install it first." >&2
+		exit 1
+	fi
+done
+
+mkdir -p "$BASE_DIR"
+
+repo_list="$(mktemp)" || { echo "Failed to create temp file" >&2; exit 1; }
+trap 'rm -f "$repo_list"' EXIT
+
+if ! gh repo list "$OWNER" --limit "$LIMIT" --json name,primaryLanguage,visibility \
+	--jq '.[] | [.name, (.primaryLanguage.name // "Other"), .visibility] | @tsv' \
+	>"$repo_list"; then
+	echo "ERROR: gh repo list failed for owner '$OWNER'" >&2
+	exit 1
+fi
+
+cloned=0
+existing=0
+moved=0
+failed=0
 
 while IFS=$'\t' read -r name lang visibility; do
 	lang_dir="$(normalize_language "$lang")"

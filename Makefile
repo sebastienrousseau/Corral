@@ -1,7 +1,7 @@
 SHELL := /bin/bash
-SCRIPTS := clone-gh-repos.sh .githooks/pre-commit
+SCRIPTS := clone-gh-repos.sh .githooks/pre-commit .githooks/pre-push
 
-.PHONY: all init lint check
+.PHONY: all init lint check test
 
 all: check
 
@@ -15,3 +15,7 @@ lint:
 check: lint
 	@for s in $(SCRIPTS); do bash -n "$$s" || exit 1; done
 	@echo "All checks passed."
+
+test: check
+	@command -v bats >/dev/null 2>&1 || { echo "ERROR: bats not found. Install: brew install bats-core (macOS) or sudo apt install bats (Linux)"; exit 1; }
+	bats tests/
