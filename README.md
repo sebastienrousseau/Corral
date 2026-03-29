@@ -16,7 +16,7 @@
 
 ---
 
-clone-gh-repos is a single-file Bash tool that clones every repository from a GitHub user or organisation and sorts them into `Public/` and `Private/` trees, grouped by primary language.
+clone-gh-repos is a single-file Bash tool that clones every repository from a GitHub user or organisation and sorts them into `Public/` and `Private/` trees, grouped by primary language. It runs on macOS, Linux, and WSL2 with no configuration.
 
 ---
 
@@ -54,19 +54,24 @@ One script. No install step. No config files. No runtime dependencies beyond `gh
 | Idempotent re-runs | Yes | Yes | Yes | No |
 | Legacy layout migration | Yes | No | No | No |
 | Test suite | 32 tests, CI on 2 OS | Yes | Limited | None |
+| macOS, Linux, and WSL2 | Yes (CI on both) | Yes | Linux only | Varies |
 | Config required | None | YAML + env vars | CLI flags + rc file | Manual edits |
 
 ---
 
 ## Get Started
 
+clone-gh-repos runs anywhere Bash 4+ is available: macOS, Ubuntu, Debian, Fedora, Arch, and Windows via WSL2.
+
 ### 1. Install the prerequisites
 
-| Tool | macOS | Linux and WSL |
-|:-----|:------|:--------------|
-| Bash 4+ | `brew install bash` | Pre-installed |
-| [Git](https://git-scm.com/) | `brew install git` | `sudo apt install git` |
-| [GitHub CLI](https://cli.github.com/) | `brew install gh` | `sudo apt install gh` |
+| Tool | macOS | Ubuntu / Debian / WSL2 | Fedora / RHEL |
+|:-----|:------|:-----------------------|:--------------|
+| Bash 4+ | `brew install bash` | Pre-installed | Pre-installed |
+| [Git](https://git-scm.com/) | `brew install git` | `sudo apt install git` | `sudo dnf install git` |
+| [GitHub CLI](https://cli.github.com/) | `brew install gh` | `sudo apt install gh` | `sudo dnf install gh` |
+
+> **WSL2 users:** Run all commands inside your Linux distribution, not from PowerShell or CMD. The script works identically to native Linux.
 
 ### 2. Authenticate with GitHub
 
@@ -109,7 +114,7 @@ Private repositories require a `gh` token with appropriate access. Public reposi
 | **Structured** | The only tool that sorts repositories into `Public/` and `Private/` trees, grouped by primary language. |
 | **Idempotent** | Safe to re-run at any time. Already-cloned repositories are skipped. Only new ones are fetched. |
 | **Migratory** | Flat `~/Code/<Language>/` layouts from earlier runs move into the new structure automatically. |
-| **Cross-platform** | Tested on macOS, Linux, and WSL2. LF line endings enforced via `.gitattributes`. |
+| **Cross-platform** | Runs on macOS, Ubuntu, Debian, Fedora, Arch, and Windows via WSL2. CI tests on Ubuntu and macOS. LF line endings enforced via `.gitattributes`. |
 | **Zero-config** | No YAML, no `.env`, no config files. Pass the owner name and run. |
 | **Fail-safe** | Pre-flight checks for `gh`, `git`, and Bash version. Clear error messages on failure. |
 | **Production-grade** | 32 automated tests. CI on Ubuntu and macOS. Signed commits. ShellCheck clean. |
@@ -155,6 +160,7 @@ Earlier versions of this script stored repositories in a flat `~/Code/<Language>
 | `ERROR: gh repo list failed` | Not authenticated, or the owner does not exist | Run `gh auth login` and verify the owner name |
 | `FAILED: owner/repo` | Network issue or protocol mismatch | Check connectivity. Run `gh config set git_protocol https` |
 | Script reports 0 repos | No repositories visible to the current token | Run `gh repo list <owner> --limit 5` to verify |
+| `\r: command not found` (WSL2) | Windows line endings in the script | Run `dos2unix clone-gh-repos.sh` or re-clone with `git config core.autocrlf input` |
 
 ---
 
@@ -168,6 +174,12 @@ Yes. Pass the organisation name as the first argument. Both user accounts and or
 
 **What happens if a repository is deleted on GitHub?**
 The local clone remains untouched. The script never deletes existing directories.
+
+**Does it work on Windows?**
+Yes, through WSL2. Install a Linux distribution from the Microsoft Store, open its terminal, and run the script there. It behaves identically to native Linux.
+
+**Does it work on macOS with the default shell?**
+macOS ships with Bash 3.2. Run `brew install bash` to get Bash 4+, then invoke the script with the Homebrew-installed Bash or add it to your `$PATH`.
 
 **Is it safe to run on a schedule (cron)?**
 Yes. The script is idempotent — existing repos are skipped, only new ones are cloned. No interactive prompts.
