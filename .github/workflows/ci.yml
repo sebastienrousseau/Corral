@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: ShellCheck (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update && sudo apt-get install -y shellcheck
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install shellcheck
+          fi
+        shell: bash
+
+      - name: Verify Bash 4+
+        run: |
+          echo "Bash version: $BASH_VERSION"
+          if ((BASH_VERSINFO[0] < 4)); then
+            echo "::error::Bash 4+ required"
+            exit 1
+          fi
+        shell: bash
+
+      - name: ShellCheck
+        run: shellcheck clone-gh-repos.sh
+        shell: bash
+
+      - name: Syntax check
+        run: bash -n clone-gh-repos.sh
+        shell: bash

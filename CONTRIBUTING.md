@@ -5,16 +5,20 @@ Thank you for considering a contribution to this project.
 ## Getting started
 
 1. Fork and clone the repo.
-2. Create a feature branch from `main`:
+2. Enable the project's Git hooks:
+   ```bash
+   git config core.hooksPath .githooks
+   ```
+3. Create a feature branch from `main`:
    ```bash
    git checkout -b feat/my-change
    ```
-3. Make your changes.
-4. Ensure the script passes static analysis:
+4. Make your changes.
+5. Run all checks:
    ```bash
-   shellcheck clone-gh-repos.sh
+   make check
    ```
-5. Commit, push, and open a pull request.
+6. Commit, push, and open a pull request.
 
 ## Commit guidelines
 

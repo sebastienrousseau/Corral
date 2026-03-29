@@ -5,14 +5,14 @@ Bulk-clone all repositories from a GitHub user or organisation, organised by vis
 ```
 ~/Code/
 ├── Public/
-│   ├── Rust/
+│   ├── rust/
 │   │   └── my-crate/
-│   ├── TypeScript/
+│   ├── typescript/
 │   │   └── my-app/
-│   └── Other/
+│   └── other/
 │       └── dotfiles/
 └── Private/
-    └── Python/
+    └── python/
         └── internal-tool/
 ```
 
@@ -22,6 +22,7 @@ The script is **idempotent** — re-running it skips repos that are already clon
 
 | Tool | Install |
 |------|---------|
+| Bash 4+ | macOS: `brew install bash` / Linux & WSL: pre-installed |
 | [Git](https://git-scm.com/) | macOS: `brew install git` / Linux & WSL: `sudo apt install git` |
 | [GitHub CLI (`gh`)](https://cli.github.com/) | macOS: `brew install gh` / Linux & WSL: `sudo apt install gh` or see [install docs](https://github.com/cli/cli/blob/trunk/docs/install_linux.md) |
 

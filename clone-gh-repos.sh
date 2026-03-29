@@ -6,6 +6,11 @@ OWNER=${1:-sebastienrousseau}
 BASE_DIR=${2:-"$HOME/Code"}
 LIMIT=${3:-1000}
 
+if ((BASH_VERSINFO[0] < 4)); then
+	echo "ERROR: Bash 4+ is required (found ${BASH_VERSION}). On macOS: brew install bash" >&2
+	exit 1
+fi
+
 for cmd in gh git; do
 	if ! command -v "$cmd" &>/dev/null; then
 		echo "ERROR: Required command '$cmd' not found. Please install it first." >&2
@@ -27,7 +32,7 @@ normalize_language() {
 
 	lang="${lang// /_}"
 	lang="${lang//\//_}"
-	echo "$lang"
+	echo "${lang,,}"
 }
 
 normalize_visibility() {
