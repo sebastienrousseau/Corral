@@ -5,7 +5,7 @@
 <h1 align="center">clone-gh-repos</h1>
 
 <p align="center">
-  <strong>The only GitHub cloning tool that organises repositories by visibility and language — automatically.</strong>
+  <strong>The only GitHub cloning tool that organises repositories by visibility and language on macOS, Linux, and WSL2 — automatically.</strong>
 </p>
 
 <p align="center">
@@ -16,15 +16,65 @@
 
 ---
 
-clone-gh-repos is a single-file Bash tool that clones every repository from a GitHub user or organisation and sorts them into `Public/` and `Private/` trees, grouped by primary language. It runs on macOS, Linux, and WSL2 with no configuration.
+## Install
+
+```bash
+gh auth login
+./clone-gh-repos.sh <owner>
+```
+
+Then verify the output:
+
+```bash
+ls ~/Code/Public/ ~/Code/Private/
+```
+
+Requires `gh`, `git`, and Bash 4+. Works on macOS, Ubuntu/Debian, Fedora/RHEL, Arch, and WSL2.
+
+<details>
+<summary>Platform-specific prerequisites</summary>
+
+**macOS:**
+
+```bash
+brew install bash git gh
+```
+
+**Ubuntu / Debian / WSL2:**
+
+```bash
+sudo apt install git gh
+```
+
+**Fedora / RHEL:**
+
+```bash
+sudo dnf install git gh
+```
+
+> **WSL2 users:** Run all commands inside your Linux distribution, not from PowerShell or CMD. The script works identically to native Linux.
+
+</details>
+
+<details>
+<summary>Automation and cron</summary>
+
+The script is idempotent and non-interactive. Safe to run on a schedule:
+
+```bash
+# crontab -e
+0 2 * * * /path/to/clone-gh-repos.sh my-username
+```
+
+Existing repositories are skipped. Only new ones are cloned.
+
+</details>
 
 ---
 
-## Why clone-gh-repos
+## Overview
 
-Most cloning tools dump every repository into a single flat directory. Finding anything means scrolling through hundreds of folders with no structure.
-
-clone-gh-repos creates a clean, navigable local mirror — sorted by visibility and language — in one command.
+Most cloning tools dump every repository into a single flat directory. Finding anything means scrolling through hundreds of folders with no structure. clone-gh-repos creates a clean, navigable local mirror — sorted by visibility and language — in one command. One script. No install step. No config files. No runtime dependencies beyond `gh` and `git`.
 
 ```
 ~/Code/
@@ -40,53 +90,57 @@ clone-gh-repos creates a clean, navigable local mirror — sorted by visibility 
         └── internal-tool/
 ```
 
-One script. No install step. No config files. No runtime dependencies beyond `gh` and `git`.
+- **Structured** by visibility and language instead of a flat dump
+- **Idempotent** re-runs that skip existing clones and only fetch new repositories
+- **Migratory** upgrade path from flat `~/Code/<Language>/` layouts to the new structure
+- **Cross-platform** with CI on Ubuntu and macOS, LF line endings enforced via `.gitattributes`
+- **Production-grade** with 32 automated tests, signed commits, and ShellCheck compliance
 
 ---
 
-## How It Compares
+## Architecture
 
-| Feature | clone-gh-repos | [ghorg](https://github.com/gabrie30/ghorg) | [ghcloneall](https://pypi.org/project/ghcloneall/) | Gist scripts |
-|:---|:---|:---|:---|:---|
-| Organises by language | Yes | No | No | No |
-| Organises by visibility | Yes | No | No | No |
-| Zero install | Yes (single bash file) | Go binary or Docker | Python + pip | Copy-paste |
-| Idempotent re-runs | Yes | Yes | Yes | No |
-| Legacy layout migration | Yes | No | No | No |
-| Test suite | 32 tests, CI on 2 OS | Yes | Limited | None |
-| macOS, Linux, and WSL2 | Yes (CI on both) | Yes | Linux only | Varies |
-| Config required | None | YAML + env vars | CLI flags + rc file | Manual edits |
+Run once or a hundred times, the directory tree converges on the same state.
+
+```mermaid
+graph TD
+    A[User Shell] --> B{clone-gh-repos}
+    B --> C[Pre-flight: Bash 4+ / gh / git]
+    C -- Missing --> Z1[Exit: dependency error]
+    C -- OK --> D[gh repo list → tempfile]
+    D -- Fails --> Z2[Exit: gh error]
+    D -- OK --> E[Loop: each repo]
+    E --> F{Already cloned?}
+    F -- Yes --> G[Skip]
+    F -- No --> H{Legacy directory?}
+    H -- Yes --> I[Migrate to new layout]
+    H -- No --> J[git clone]
+    G & I & J --> E
+    E -- Done --> K[Remove empty legacy directories]
+    K --> L[Print summary]
+```
 
 ---
 
-## Get Started
+## Features
 
-clone-gh-repos runs anywhere Bash 4+ is available: macOS, Ubuntu, Debian, Fedora, Arch, and Windows via WSL2.
+| | |
+| :--- | :--- |
+| **Structured** | The only tool that sorts repositories into `Public/` and `Private/` trees, grouped by primary language |
+| **Idempotent** | Safe to re-run at any time — already-cloned repositories are skipped, only new ones are fetched |
+| **Migratory** | Flat `~/Code/<Language>/` layouts from earlier runs move into the new structure automatically |
+| **Platforms** | First-class support for macOS, Ubuntu/Debian, Fedora/RHEL, Arch, and Windows via WSL2 |
+| **Zero-config** | No YAML, no `.env`, no config files — pass the owner name and run |
+| **Fail-safe** | Pre-flight checks for `gh`, `git`, and Bash version with clear error messages on failure |
+| **Production-grade** | 32 automated tests, CI on Ubuntu and macOS, signed commits, ShellCheck clean |
+| **Security** | All commits cryptographically signed (ED25519), CI actions pinned to immutable SHAs, Gitleaks secret scanning |
 
-### 1. Install the prerequisites
+---
 
-| Tool | macOS | Ubuntu / Debian / WSL2 | Fedora / RHEL |
-|:-----|:------|:-----------------------|:--------------|
-| Bash 4+ | `brew install bash` | Pre-installed | Pre-installed |
-| [Git](https://git-scm.com/) | `brew install git` | `sudo apt install git` | `sudo dnf install git` |
-| [GitHub CLI](https://cli.github.com/) | `brew install gh` | `sudo apt install gh` | `sudo dnf install gh` |
-
-> **WSL2 users:** Run all commands inside your Linux distribution, not from PowerShell or CMD. The script works identically to native Linux.
-
-### 2. Authenticate with GitHub
-
-```bash
-gh auth login
-```
-
-### 3. Clone
-
-```bash
-./clone-gh-repos.sh <owner> [base_dir] [limit]
-```
+## Usage
 
 | Parameter | Required | Default | Description |
-|:----------|:---------|:--------|:------------|
+| :--- | :--- | :--- | :--- |
 | `owner` | Yes | — | GitHub username or organisation |
 | `base_dir` | No | `$HOME/Code` | Root directory for the cloned tree |
 | `limit` | No | `1000` | Maximum repositories to fetch |
@@ -107,99 +161,74 @@ Private repositories require a `gh` token with appropriate access. Public reposi
 
 ---
 
-## Features
+## What's Included
 
-| Feature | Description |
-|:---|:---|
-| **Structured** | The only tool that sorts repositories into `Public/` and `Private/` trees, grouped by primary language. |
-| **Idempotent** | Safe to re-run at any time. Already-cloned repositories are skipped. Only new ones are fetched. |
-| **Migratory** | Flat `~/Code/<Language>/` layouts from earlier runs move into the new structure automatically. |
-| **Cross-platform** | Runs on macOS, Ubuntu, Debian, Fedora, Arch, and Windows via WSL2. CI tests on Ubuntu and macOS. LF line endings enforced via `.gitattributes`. |
-| **Zero-config** | No YAML, no `.env`, no config files. Pass the owner name and run. |
-| **Fail-safe** | Pre-flight checks for `gh`, `git`, and Bash version. Clear error messages on failure. |
-| **Production-grade** | 32 automated tests. CI on Ubuntu and macOS. Signed commits. ShellCheck clean. |
+<details>
+<summary><b>Organisation and Layout</b></summary>
 
----
+- **Visibility sorting** separates repositories into `Public/` and `Private/` trees based on GitHub metadata
+- **Language grouping** places each repository under its primary language directory, normalised to lowercase
+- **Special characters** are handled cleanly — C# becomes `csharp`, C++ becomes `cpp`, spaces and slashes become underscores
+- **Null languages** default to `other/` so every repository has a home
+</details>
 
-## How It Works
+<details>
+<summary><b>Legacy Migration</b></summary>
 
-```mermaid
-flowchart TD
-    A[Start] --> B{Bash 4+ / gh / git?}
-    B -- Missing --> Z1[Exit: dependency error]
-    B -- OK --> C[gh repo list → tempfile]
-    C -- Fails --> Z2[Exit: gh error]
-    C -- OK --> D[Loop: each repo]
+- **Flat layouts** from earlier versions (`~/Code/<Language>/<repo>`) are detected and moved into the new `<Visibility>/<Language>/<repo>` structure
+- **Empty directories** left behind after migration are removed automatically
+- **Existing clones** are never overwritten or deleted — the script only adds, never subtracts
+</details>
 
-    D --> E{Already cloned?}
-    E -- Yes --> F[Skip]
-    E -- No --> G{Legacy directory?}
-
-    G -- Yes --> H[Migrate to new layout]
-    G -- No --> I[git clone]
-
-    F & H & I --> D
-    D -- Done --> J[Remove empty legacy directories]
-    J --> K[Print summary]
-```
-
----
-
-## Legacy Migration
-
-Earlier versions of this script stored repositories in a flat `~/Code/<Language>/<repo>` layout. When the script encounters these directories, it moves them into the new `<Visibility>/<Language>/<repo>` structure. Empty legacy language folders are removed afterward.
-
----
-
-## Troubleshooting
+<details>
+<summary><b>Troubleshooting</b></summary>
 
 | Message | Cause | Solution |
-|:--------|:------|:---------|
+| :--- | :--- | :--- |
 | `ERROR: Bash 4+ is required` | macOS includes Bash 3.2 by default | `brew install bash` |
-| `ERROR: Required command 'gh' not found` | GitHub CLI is not installed | See Get Started above |
+| `ERROR: Required command 'gh' not found` | GitHub CLI is not installed | See Install above |
 | `ERROR: gh repo list failed` | Not authenticated, or the owner does not exist | Run `gh auth login` and verify the owner name |
 | `FAILED: owner/repo` | Network issue or protocol mismatch | Check connectivity. Run `gh config set git_protocol https` |
 | Script reports 0 repos | No repositories visible to the current token | Run `gh repo list <owner> --limit 5` to verify |
 | `\r: command not found` (WSL2) | Windows line endings in the script | Run `dos2unix clone-gh-repos.sh` or re-clone with `git config core.autocrlf input` |
+</details>
+
+<details>
+<summary><b>Frequently Asked Questions</b></summary>
+
+- **Can it back up private repositories?** Yes. Any repository visible to the authenticated `gh` token is cloned. Private repositories land in the `Private/` tree.
+- **Does it work with organisations?** Yes. Pass the organisation name as the first argument. Both user accounts and organisations are supported.
+- **What happens if a repository is deleted on GitHub?** The local clone remains untouched. The script never deletes existing directories.
+- **Does it work on Windows?** Yes, through WSL2. Install a Linux distribution from the Microsoft Store, open its terminal, and run the script there. It behaves identically to native Linux.
+- **Does it work on macOS with the default shell?** macOS ships with Bash 3.2. Run `brew install bash` to get Bash 4+, then invoke the script with the Homebrew-installed Bash or add it to your `$PATH`.
+- **Is it safe to run on a schedule?** Yes. The script is idempotent — existing repos are skipped, only new ones are cloned. No interactive prompts.
+</details>
+
+<details>
+<summary><b>How It Compares</b></summary>
+
+| Feature | clone-gh-repos | [ghorg](https://github.com/gabrie30/ghorg) | [ghcloneall](https://pypi.org/project/ghcloneall/) | Gist scripts |
+| :--- | :--- | :--- | :--- | :--- |
+| Organises by language | Yes | No | No | No |
+| Organises by visibility | Yes | No | No | No |
+| macOS, Linux, and WSL2 | Yes (CI on both) | Yes | Linux only | Varies |
+| Zero install | Yes (single bash file) | Go binary or Docker | Python + pip | Copy-paste |
+| Idempotent re-runs | Yes | Yes | Yes | No |
+| Legacy layout migration | Yes | No | No | No |
+| Test suite | 32 tests, CI on 2 OS | Yes | Limited | None |
+| Config required | None | YAML + env vars | CLI flags + rc file | Manual edits |
+</details>
+
+For security policy and vulnerability reporting, see [SECURITY.md](SECURITY.md).
 
 ---
 
-## FAQ
-
-**Can clone-gh-repos back up private repositories?**
-Yes. Any repository visible to the authenticated `gh` token is cloned. Private repositories land in the `Private/` tree.
-
-**Does it work with GitHub organisations?**
-Yes. Pass the organisation name as the first argument. Both user accounts and organisations are supported.
-
-**What happens if a repository is deleted on GitHub?**
-The local clone remains untouched. The script never deletes existing directories.
-
-**Does it work on Windows?**
-Yes, through WSL2. Install a Linux distribution from the Microsoft Store, open its terminal, and run the script there. It behaves identically to native Linux.
-
-**Does it work on macOS with the default shell?**
-macOS ships with Bash 3.2. Run `brew install bash` to get Bash 4+, then invoke the script with the Homebrew-installed Bash or add it to your `$PATH`.
-
-**Is it safe to run on a schedule (cron)?**
-Yes. The script is idempotent — existing repos are skipped, only new ones are cloned. No interactive prompts.
-
----
-
-## Security
-
-See [SECURITY.md](SECURITY.md).
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+**THE ARCHITECT** ᛫ [Sebastien Rousseau](https://sebastienrousseau.com)
 
 ---
 
 ## License
 
-Released under the [GNU General Public License v3.0](LICENSE).
+Licensed under the **[GNU General Public License v3.0](LICENSE)**.
 
 <p align="right"><a href="#clone-gh-repos">Back to Top</a></p>
