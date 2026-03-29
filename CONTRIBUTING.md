@@ -5,21 +5,33 @@ clone-gh-repos is a single-file Bash tool that clones and organises GitHub repos
 ## Getting Started
 
 1. Fork and clone the repository.
-2. Set up the project:
+2. Install development dependencies:
+
+   **macOS:**
+   ```bash
+   brew install bash shellcheck bats-core
+   ```
+
+   **Ubuntu / Debian / WSL2:**
+   ```bash
+   sudo apt install shellcheck bats
+   ```
+
+3. Set up the project:
    ```bash
    make init
    ```
-3. Create a branch:
+4. Create a branch:
    ```bash
    git checkout -b feat/my-change
    ```
-4. Make changes.
-5. Verify everything passes:
+5. Make changes.
+6. Verify everything passes:
    ```bash
    make check
    make test
    ```
-6. Commit, push, and open a pull request.
+7. Commit, push, and open a pull request.
 
 ## Commits
 

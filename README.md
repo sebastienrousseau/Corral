@@ -19,6 +19,8 @@
 ## Install
 
 ```bash
+git clone https://github.com/sebastienrousseau/clone-gh-repos.git
+cd clone-gh-repos
 gh auth login
 ./clone-gh-repos.sh <owner>
 ```
@@ -26,7 +28,7 @@ gh auth login
 Then verify the output:
 
 ```bash
-ls ~/Code/Public/ ~/Code/Private/
+ls ~/Code/
 ```
 
 Requires `gh`, `git`, and Bash 4+. Works on macOS, Ubuntu/Debian, Fedora/RHEL, Arch, and WSL2.
@@ -40,11 +42,15 @@ Requires `gh`, `git`, and Bash 4+. Works on macOS, Ubuntu/Debian, Fedora/RHEL, A
 brew install bash git gh
 ```
 
+macOS ships with Bash 3.2. After installing Bash 4+ via Homebrew, ensure it appears first in your `$PATH` or invoke the script explicitly: `/opt/homebrew/bin/bash clone-gh-repos.sh <owner>`.
+
 **Ubuntu / Debian / WSL2:**
 
 ```bash
-sudo apt install git gh
+sudo apt install git
 ```
+
+Install `gh` separately — see the [GitHub CLI install guide](https://github.com/cli/cli/blob/trunk/docs/install_linux.md) for your distribution.
 
 **Fedora / RHEL:**
 
@@ -90,11 +96,10 @@ Most cloning tools dump every repository into a single flat directory. Finding a
         └── internal-tool/
 ```
 
-- **Structured** by visibility and language instead of a flat dump
-- **Idempotent** re-runs that skip existing clones and only fetch new repositories
-- **Migratory** upgrade path from flat `~/Code/<Language>/` layouts to the new structure
-- **Cross-platform** with CI on Ubuntu and macOS, LF line endings enforced via `.gitattributes`
-- **Production-grade** with 32 automated tests, signed commits, and ShellCheck compliance
+- **One command** to clone and organise every repository from a user or organisation
+- **Safe to re-run** at any time — new repos are cloned, existing ones are untouched
+- **Automatic migration** from flat `~/Code/<Language>/` layouts to the new visibility-based structure
+- **Tested on macOS and Ubuntu** with 32 automated tests, signed commits, and ShellCheck compliance
 
 ---
 
@@ -188,7 +193,7 @@ Private repositories require a `gh` token with appropriate access. Public reposi
 | `ERROR: Bash 4+ is required` | macOS includes Bash 3.2 by default | `brew install bash` |
 | `ERROR: Required command 'gh' not found` | GitHub CLI is not installed | See Install above |
 | `ERROR: gh repo list failed` | Not authenticated, or the owner does not exist | Run `gh auth login` and verify the owner name |
-| `FAILED: owner/repo` | Network issue or protocol mismatch | Check connectivity. Run `gh config set git_protocol https` |
+| `FAILED: owner/repo` | Network issue or private repo without token access | Check connectivity and verify `gh auth status` |
 | Script reports 0 repos | No repositories visible to the current token | Run `gh repo list <owner> --limit 5` to verify |
 | `\r: command not found` (WSL2) | Windows line endings in the script | Run `dos2unix clone-gh-repos.sh` or re-clone with `git config core.autocrlf input` |
 </details>
