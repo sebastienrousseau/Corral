@@ -5,7 +5,7 @@
 <h1 align="center">Corral</h1>
 
 <p align="center">
-  <strong>The only GitHub cloning tool that organises repositories by visibility and language on macOS, Linux, and WSL2 — automatically.</strong>
+  <strong>Automatically clone and organise GitHub repositories by visibility and language.</strong>
 </p>
 
 <p align="center">
