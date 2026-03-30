@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sebastienrousseau/Corral/actions"><img src="https://img.shields.io/github/actions/workflow/status/sebastienrousseau/Corral/ci.yml?style=for-the-badge&logo=github" alt="Build" /></a>
-  <a href="https://github.com/sebastienrousseau/Corral/releases/latest"><img src="https://img.shields.io/github/v/release/sebastienrousseau/Corral?style=for-the-badge" alt="Version" /></a>
+  <a href="https://github.com/sebastienrousseau/corral/actions"><img src="https://img.shields.io/github/actions/workflow/status/sebastienrousseau/corral/ci.yml?style=for-the-badge&logo=github" alt="Build" /></a>
+  <a href="https://github.com/sebastienrousseau/corral/releases/latest"><img src="https://img.shields.io/github/v/release/sebastienrousseau/corral?style=for-the-badge" alt="Version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=for-the-badge" alt="License" /></a>
 </p>
 
@@ -19,8 +19,8 @@
 ## Install
 
 ```bash
-git clone https://github.com/sebastienrousseau/Corral.git
-cd Corral
+git clone https://github.com/sebastienrousseau/corral.git
+cd corral
 gh auth login
 ./corral.sh <owner>
 ```
