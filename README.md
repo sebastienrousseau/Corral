@@ -1,16 +1,16 @@
 <p align="center">
-  <img src=".github/logo.png" alt="clone-gh-repos logo" width="128" />
+  <img src=".github/logo.svg" alt="Corral logo" width="160" height="160" />
 </p>
 
-<h1 align="center">clone-gh-repos</h1>
+<h1 align="center">Corral</h1>
 
 <p align="center">
-  <strong>The only GitHub cloning tool that organises repositories by visibility and language on macOS, Linux, and WSL2 — automatically.</strong>
+  <strong>Automatically clone and organise GitHub repositories by visibility and language.</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/sebastienrousseau/clone-gh-repos/actions"><img src="https://img.shields.io/github/actions/workflow/status/sebastienrousseau/clone-gh-repos/ci.yml?style=for-the-badge&logo=github" alt="Build" /></a>
-  <a href="https://github.com/sebastienrousseau/clone-gh-repos/releases/latest"><img src="https://img.shields.io/github/v/release/sebastienrousseau/clone-gh-repos?style=for-the-badge" alt="Version" /></a>
+  <a href="https://github.com/sebastienrousseau/corral/actions"><img src="https://img.shields.io/github/actions/workflow/status/sebastienrousseau/corral/ci.yml?style=for-the-badge&logo=github" alt="Build" /></a>
+  <a href="https://github.com/sebastienrousseau/corral/releases/latest"><img src="https://img.shields.io/github/v/release/sebastienrousseau/corral?style=for-the-badge" alt="Version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=for-the-badge" alt="License" /></a>
 </p>
 
@@ -19,10 +19,10 @@
 ## Install
 
 ```bash
-git clone https://github.com/sebastienrousseau/clone-gh-repos.git
-cd clone-gh-repos
+git clone https://github.com/sebastienrousseau/corral.git
+cd corral
 gh auth login
-./clone-gh-repos.sh <owner>
+./corral.sh <owner>
 ```
 
 Then verify the output:
@@ -42,7 +42,7 @@ Requires `gh`, `git`, and Bash 4+. Works on macOS, Ubuntu/Debian, Fedora/RHEL, A
 brew install bash git gh
 ```
 
-macOS ships with Bash 3.2. After installing Bash 4+ via Homebrew, ensure it appears first in your `$PATH` or invoke the script explicitly: `/opt/homebrew/bin/bash clone-gh-repos.sh <owner>`.
+macOS ships with Bash 3.2. After installing Bash 4+ via Homebrew, ensure it appears first in your `$PATH` or invoke the script explicitly: `/opt/homebrew/bin/bash corral.sh <owner>`.
 
 **Ubuntu / Debian / WSL2:**
 
@@ -69,7 +69,7 @@ The script is idempotent and non-interactive. Safe to run on a schedule:
 
 ```bash
 # crontab -e
-0 2 * * * /path/to/clone-gh-repos.sh my-username
+0 2 * * * /path/to/corral.sh my-username
 ```
 
 Existing repositories are skipped. Only new ones are cloned.
@@ -80,7 +80,7 @@ Existing repositories are skipped. Only new ones are cloned.
 
 ## Overview
 
-Most cloning tools dump every repository into a single flat directory. Finding anything means scrolling through hundreds of folders with no structure. clone-gh-repos creates a clean, navigable local mirror — sorted by visibility and language — in one command. One script. No install step. No config files. No runtime dependencies beyond `gh` and `git`.
+Most cloning tools dump every repository into a single flat directory. Finding anything means scrolling through hundreds of folders with no structure. Corral creates a clean, navigable local mirror — sorted by visibility and language — in one command. One script. No install step. No config files. No runtime dependencies beyond `gh` and `git`.
 
 ```
 ~/Code/
@@ -97,9 +97,9 @@ Most cloning tools dump every repository into a single flat directory. Finding a
 ```
 
 - **One command** to clone and organise every repository from a user or organisation
-- **Safe to re-run** at any time — new repos are cloned, existing ones are untouched
+- **Safe to re-run** at any time — new repos are cloned, existing ones are untouched (or pulled if `--sync` is active)
 - **Automatic migration** from flat `~/Code/<Language>/` layouts to the new visibility-based structure
-- **Tested on macOS and Ubuntu** with 32 automated tests, signed commits, and ShellCheck compliance
+- **Tested on macOS and Ubuntu** with 39 automated tests, signed commits, and ShellCheck compliance
 
 ---
 
@@ -109,18 +109,19 @@ Run once or a hundred times, the directory tree converges on the same state.
 
 ```mermaid
 graph TD
-    A[User Shell] --> B{clone-gh-repos}
+    A[User Shell] --> B{Corral}
     B --> C[Pre-flight: Bash 4+ / gh / git]
     C -- Missing --> Z1[Exit: dependency error]
     C -- OK --> D[gh repo list → tempfile]
     D -- Fails --> Z2[Exit: gh error]
     D -- OK --> E[Loop: each repo]
     E --> F{Already cloned?}
-    F -- Yes --> G[Skip]
+    F -- "Yes + --sync" --> G1[git pull --rebase --autostash]
+    F -- "Yes / no sync" --> G2[Skip]
     F -- No --> H{Legacy directory?}
     H -- Yes --> I[Migrate to new layout]
     H -- No --> J[git clone]
-    G & I & J --> E
+    G1 & G2 & I & J --> E
     E -- Done --> K[Remove empty legacy directories]
     K --> L[Print summary]
 ```
@@ -137,7 +138,7 @@ graph TD
 | **Platforms** | First-class support for macOS, Ubuntu/Debian, Fedora/RHEL, Arch, and Windows via WSL2 |
 | **Zero-config** | No YAML, no `.env`, no config files — pass the owner name and run |
 | **Fail-safe** | Pre-flight checks for `gh`, `git`, and Bash version with clear error messages on failure |
-| **Production-grade** | 32 automated tests, CI on Ubuntu and macOS, signed commits, ShellCheck clean |
+| **Production-grade** | 39 automated tests, CI on Ubuntu and macOS, signed commits, ShellCheck clean |
 | **Security** | All commits cryptographically signed (ED25519), CI actions pinned to immutable SHAs, Gitleaks secret scanning |
 
 ---
@@ -150,16 +151,41 @@ graph TD
 | `base_dir` | No | `$HOME/Code` | Root directory for the cloned tree |
 | `limit` | No | `1000` | Maximum repositories to fetch |
 
+| Option | Short | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--dry-run` | `-n` | off | Preview actions without making changes |
+| `--help` | `-h` | — | Show help message |
+| `--protocol` | `-p` | `https` | Clone protocol — `ssh` or `https` |
+| `--sync` | `-s` | off | Pull latest changes for already-cloned repos |
+
 Clone a personal account:
 
 ```bash
-./clone-gh-repos.sh my-username
+./corral.sh my-username
 ```
 
 Clone an organisation into a custom directory:
 
 ```bash
-./clone-gh-repos.sh my-org ~/Projects 500
+./corral.sh my-org ~/Projects 500
+```
+
+Clone via SSH (key-based auth):
+
+```bash
+./corral.sh --protocol ssh my-username
+```
+
+Keep existing clones up to date:
+
+```bash
+./corral.sh --sync my-username
+```
+
+Preview what would happen without making changes:
+
+```bash
+./corral.sh --dry-run my-org
 ```
 
 Private repositories require a `gh` token with appropriate access. Public repositories from any account are always available.
@@ -195,7 +221,7 @@ Private repositories require a `gh` token with appropriate access. Public reposi
 | `ERROR: gh repo list failed` | Not authenticated, or the owner does not exist | Run `gh auth login` and verify the owner name |
 | `FAILED: owner/repo` | Network issue or private repo without token access | Check connectivity and verify `gh auth status` |
 | Script reports 0 repos | No repositories visible to the current token | Run `gh repo list <owner> --limit 5` to verify |
-| `\r: command not found` (WSL2) | Windows line endings in the script | Run `dos2unix clone-gh-repos.sh` or re-clone with `git config core.autocrlf input` |
+| `\r: command not found` (WSL2) | Windows line endings in the script | Run `dos2unix corral.sh` or re-clone with `git config core.autocrlf input` |
 </details>
 
 <details>
@@ -212,7 +238,7 @@ Private repositories require a `gh` token with appropriate access. Public reposi
 <details>
 <summary><b>How It Compares</b></summary>
 
-| Feature | clone-gh-repos | [ghorg](https://github.com/gabrie30/ghorg) | [ghcloneall](https://pypi.org/project/ghcloneall/) | Gist scripts |
+| Feature | Corral | [ghorg](https://github.com/gabrie30/ghorg) | [ghcloneall](https://pypi.org/project/ghcloneall/) | Gist scripts |
 | :--- | :--- | :--- | :--- | :--- |
 | Organises by language | Yes | No | No | No |
 | Organises by visibility | Yes | No | No | No |
@@ -220,7 +246,7 @@ Private repositories require a `gh` token with appropriate access. Public reposi
 | Zero install | Yes (single bash file) | Go binary or Docker | Python + pip | Copy-paste |
 | Idempotent re-runs | Yes | Yes | Yes | No |
 | Legacy layout migration | Yes | No | No | No |
-| Test suite | 32 tests, CI on 2 OS | Yes | Limited | None |
+| Test suite | 39 tests, CI on 2 OS | Yes | Limited | None |
 | Config required | None | YAML + env vars | CLI flags + rc file | Manual edits |
 </details>
 
@@ -229,6 +255,7 @@ For security policy and vulnerability reporting, see [SECURITY.md](SECURITY.md).
 ---
 
 **THE ARCHITECT** ᛫ [Sebastien Rousseau](https://sebastienrousseau.com)
+**THE ENGINE** ᛞ [EUXIS](https://euxis.co) ᛫ Enterprise Unified Execution Intelligence System
 
 ---
 
@@ -236,4 +263,4 @@ For security policy and vulnerability reporting, see [SECURITY.md](SECURITY.md).
 
 Licensed under the **[GNU General Public License v3.0](LICENSE)**.
 
-<p align="right"><a href="#clone-gh-repos">Back to Top</a></p>
+<p align="right"><a href="#corral">Back to Top</a></p>
